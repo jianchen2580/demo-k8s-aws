@@ -1,0 +1,10 @@
+---
+###########################
+# Setup Kubernetes Cluster
+###########################
+
+- hosts: all
+  gather_facts: false
+  roles:
+    - create-cluster
+    - kubectl-config

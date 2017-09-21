@@ -1,0 +1,6 @@
+---
+
+kops_version: "1.7.0"
+kops_owner: "chenjian"
+kops_download_path: "https://github.com/kubernetes/kops/releases/download/{{ kops_version }}"
+kops_darwin_download_path: "https://github.com/kubernetes/kops/releases/download/{{ kops_version }}"

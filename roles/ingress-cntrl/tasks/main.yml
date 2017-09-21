@@ -1,0 +1,107 @@
+---
+# tasks file for ingress-cntrl
+
+####################
+# Install Kubernetes Dashboard
+####################
+
+- name: Generate the default backend for page misses
+  template:
+    src: default-backend.yaml.j2
+    dest: /tmp/default-backend.yaml
+    mode: 0644
+  become: false
+  tags:
+    - ingress-cntrl
+    - ingress-generate-only
+    - default-backend
+
+- name: install default backend controller
+  command: "kubectl --context={{ cluster_name }}  apply -f /tmp/default-backend.yaml"
+  tags:
+    - ingress-cntrl
+    - default-backend
+# add some debugging here to make sure it worked.
+
+
+
+#
+# enable the internal only ingress controller
+#
+- name: Add Kubernetes internal only ingress controller configuration
+  template:
+    src: internal-ingress-controller.yaml.j2
+    dest: /tmp/internal-ingress-controller.yaml
+    mode: 0644
+  become: false
+  tags:
+    - ingress-cntrl
+    - internal-ingress
+    - ingress-generate-only
+  when: enable_internal_ingress is defined
+
+#
+# Enable the external facing ingress controller
+#
+- name: Add Kubernetes external only ingress controller configuration
+  template:
+    src: external-ingress-controller.yaml.j2
+    dest: /tmp/external-ingress-controller.yaml
+    mode: 0644
+  become: false
+  tags:
+    - ingress-cntrl
+    - ingress-generate-only
+    - external-ingress
+  when: enable_external_ingress is defined
+
+#
+# generate the install deployment for the default ingress controller that is by default an external controller
+#
+- name: Add the default ingress controller which is an external ingress
+  template:
+    src: default-ingress-controller.yaml.j2
+    dest: /tmp/default-ingress-controller.yaml
+    mode: 0644
+  become: false
+  tags:
+    - ingress-cntrl
+    - ingress-generate-only
+    - default-ingress
+  when: enable_default_ingress is defined
+
+
+#
+# Install the internal ingress controller
+#
+- name: install  internal ingress controller
+  command: "kubectl --context={{ cluster_name }}  apply -f /tmp/internal-ingress-controller.yaml"
+  tags:
+    - ingress-cntrl
+    - internal-ingress
+  when: enable_internal_ingress is defined
+
+
+
+#
+# Install the external ingress controller
+#
+- name: install external ingress controller
+  command: "kubectl --context={{ cluster_name }}  apply -f /tmp/external-ingress-controller.yaml"
+  tags:
+    - ingress-cntrl
+    - external-ingress
+  when: enable_external_ingress is defined
+# add some debugging here to make sure it worked.
+
+
+#
+# Install the default ingress controller
+#
+- name: install default ingress controller
+  command: "kubectl --context={{ cluster_name }}  apply -f /tmp/default-ingress-controller.yaml"
+  tags:
+    - ingress-cntrl
+    - external-ingress
+  when: enable_default_ingress is defined
+

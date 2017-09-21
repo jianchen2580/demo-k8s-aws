@@ -1,0 +1,136 @@
+#
+# { ansible_managed}
+#
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: internal-ingress-nginx
+  namespace: kube-system
+  labels:
+    k8s-addon: ingress-nginx.addons.k8s.io
+data:
+  use-proxy-protocol: 'true'
+  enable-vts-status: 'true'
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: internal-ingress-nginx-metrics
+  namespace: kube-system
+  labels:
+    k8s-addon: ingress-nginx.addons.k8s.io
+  annotations:
+    prometheus.io/port: '18080'
+    prometheus.io/scrape: 'true'
+spec:
+  selector:
+    app: internal-ingress-nginx
+  ports:
+  - name: http-metrics
+    port: 8080
+    targetPort: 18080
+    protocol: TCP
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: internal-ingress-nginx
+  namespace: kube-system
+  labels:
+    k8s-addon: ingress-nginx.addons.k8s.io
+  annotations:
+    prometheus.io/port: '10254'
+    prometheus.io/scrape: 'true'
+    service.beta.kubernetes.io/aws-load-balancer-proxy-protocol: '*'
+{% if additional_internal_annotations is defined %}
+{% for notation in additional_internal_annotations %}
+    {{ notation }}
+{% endfor %}
+{% endif %}
+spec:
+  type: LoadBalancer
+  selector:
+    app: internal-ingress-nginx
+  ports:
+{% if DISABLE_HTTP_INTERNAL_INGRESS == false %}
+  - name: http
+    port: 80
+    targetPort: 80
+{% endif  %}
+  - name: https
+    port: 443
+{% if ELB_TERMINATES_INTERNAL_TLS == false %}
+    targetPort: 443
+{% else %}
+    targetPort: 80
+{% endif %}
+---
+
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  name: internal-ingress-nginx
+  namespace: kube-system
+  annotations:
+      prometheus.io/port: '18080'
+      prometheus.io/scrape: "true"
+  labels:
+    k8s-addon: ingress-nginx.addons.k8s.io
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: internal-ingress-nginx
+        k8s-addon: ingress-nginx.addons.k8s.io
+    spec:
+      terminationGracePeriodSeconds: 60
+      containers:
+      - image: gcr.io/google_containers/nginx-ingress-controller:{{ INGRESS_VERSION }}
+        name: internal-ingress-nginx
+        imagePullPolicy: Always
+        ports:
+          - name: http
+            containerPort: 80
+            protocol: TCP
+          - name: https
+            containerPort: 443
+            protocol: TCP
+          - name: stats
+            containerPort: 18080
+            protocol: TCP
+        readinessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ internal_health_port }}
+            scheme: HTTP
+          initialDelaySeconds: 10
+          timeoutSeconds: 1
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: {{ internal_health_port }}
+            scheme: HTTP
+          initialDelaySeconds: 30
+          timeoutSeconds: 5
+        env:
+          - name: POD_NAME
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.name
+          - name: POD_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        args:
+        - /nginx-ingress-controller
+        - --default-backend-service=$(POD_NAMESPACE)/nginx-default-backend
+        - --configmap=$(POD_NAMESPACE)/internal-ingress-nginx
+        - --publish-service=$(POD_NAMESPACE)/internal-ingress-nginx
+{% if ADDITIONAL_INTERNAL_ARGS is defined %}
+  {% for arg in ADDITIONAL_INTERNAL_ARGS %}
+      {{ arg }}
+  {% endfor %}
+{% endif %}

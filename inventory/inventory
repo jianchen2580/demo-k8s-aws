@@ -1,0 +1,5 @@
+# Inventory File
+#
+
+[demo.jiannc.com]
+internal              ansible_connection=local

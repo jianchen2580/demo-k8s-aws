@@ -1,0 +1,13 @@
+---
+# tasks file for namespaces
+#
+# It's ok to skip errors... if the name space already exists we will get
+# an error.  It's ok.
+#
+- name: "Create all the namespaces in our cluster"
+  shell: "kubectl --context={{ cluster_name }} create namespace {{ item }}"
+  with_items:
+    - "{{ namespaces }}"
+  register: result
+  ignore_errors: True
+  tags: namespace_create

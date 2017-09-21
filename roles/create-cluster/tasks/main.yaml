@@ -1,0 +1,29 @@
+---
+
+####################
+# Create Kubernetes cluster using Kops
+####################
+
+#- name: List clusters
+#  shell: "kops create clusters --state {{ state_store }}"
+#  register: get_clusters
+# must now use kops 1.6.2
+#
+- name: Configure the cluster
+  # shell: "kops create cluster --associate-public-ip=false --cloud=aws --bastion=false --dns-zone={{ dns_zone }} --kubernetes-version={{ version }} --master-size={{ master_size }} --master-volume-size={{ master_volume_size }} --master-zones={{ aws_zones }} --network-cidr={{ network_cidr }} --networking={{ kubernetes_networking }} --node-count={{ node_count }} --node-size={{ node_size }} --node-volume-size={{ node_volume_size }} --target=direct --topology={{ Topology }} --zones={{ aws_zones }} --ssh-public-key={{ ssh_public_key }} --name={{ cluster_name }} --state {{ state_store }}"
+  shell: "kops create cluster --cloud=aws --bastion=false --dns-zone={{ dns_zone }} --kubernetes-version={{ version }} --master-size={{ master_size }} --master-zones={{ aws_zones }} --network-cidr={{ network_cidr }} --networking={{ kubernetes_networking }} --node-count={{ node_count }} --node-size={{ node_size }} --target=direct  --zones={{ aws_zones }} --ssh-public-key={{ ssh_public_key }} --name={{ cluster_name }} --state {{ state_store }}"
+  tags: create
+
+- name: Create the physical cluster
+  shell: "kops update cluster {{ cluster_name }} --yes --state {{ state_store }}"
+  tags: create
+
+- name: Verify that all Kubernetes nodes are ready
+  shell: kubectl --context={{ cluster_name }} get nodes | grep "Ready" | wc -l
+  register: cmd_result
+  until: cmd_result.stdout.find('{{ node_count + 3 }}') != -1
+  retries: 20
+  delay: 60
+  tags: create
+
+

@@ -1,0 +1,12 @@
+---
+###########################
+# Setup Kubernetes Add-Ons
+###########################
+
+- hosts: all
+  roles:
+    - helm
+    - namespaces
+    # - dockerhub-secrets
+    - heapster
+    - dashboard

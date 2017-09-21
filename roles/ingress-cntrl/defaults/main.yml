@@ -1,0 +1,76 @@
+---
+INGRESS_VERSION: '0.9.0-beta.11'
+# defaults file for ingress-cntrl
+
+
+
+
+
+#
+# Defaults for the internal ingress controller
+#
+
+internal_health_port: 10254
+ADDITIONAL_INTERNAL_ARGS:
+  - "- --ingress-class=internal"
+  - "- --v=1"
+additional_internal_annotations:
+  - "service.beta.kubernetes.io/aws-load-balancer-internal: '0.0.0.0/0'"
+
+
+
+#
+# If we want to disable ELB->INGRESS->containers.
+#
+DISABLE_HTTP_INTERNAL_INGRESS: false
+
+
+#
+# If the ELB has the certificate and terminates the TLS connection ( internal traffic then is just HTTP )
+# we have to map the ELB 443 to port 80 for our bot containers
+#
+ELB_TERMINATES_INTERNAL_TLS: false
+
+
+#
+# Defaults for the external ingress controller
+#
+external_health_port: 10254
+ADDITIONAL_EXTERNAL_ARGS:
+  - "- --ingress-class=external"
+  - "- --v=1"
+
+#
+# Add the variable below to get more annotations
+#
+  #additional_external_annotations:
+
+#
+# If we want to disable ELB->INGRESS->containers.
+#
+DISABLE_HTTP_EXTERNAL_INGRESS: false
+
+
+#
+# If the ELB has the certificate and terminates the TLS connection ( internal traffic then is just HTTP )
+# we have to map the ELB 443 to port 80 for our bot containers
+#
+ELB_TERMINATES_EXTERNAL_TLS: false
+
+
+#
+# defaults for the original ELB
+#
+#
+#
+# If we want to disable ELB->INGRESS->containers.
+#
+DISABLE_HTTP_INGRESS: false
+
+
+#
+# If the ELB has the certificate and terminates the TLS connection ( internal traffic then is just HTTP )
+# we have to map the ELB 443 to port 80 for our bot containers
+#
+ELB_TERMINATES_TLS: false
+

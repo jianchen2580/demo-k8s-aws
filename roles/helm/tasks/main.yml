@@ -1,0 +1,7 @@
+---
+# tasks file for helm
+#
+- name: helm | Install helm into cluster
+  command: "helm --kube-context={{ cluster_name }}  init --upgrade --debug"
+  tags:
+    - helm

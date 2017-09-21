@@ -1,0 +1,6 @@
+---
+
+kubectl_version: "v1.7.0"
+kubectl_owner: "chenjian"
+kubectl_download_path: "https://storage.googleapis.com/kubernetes-release/release/{{ kubectl_version }}/bin/linux/amd64"
+kubectl_darwin_download_path: "https://storage.googleapis.com/kubernetes-release/release/{{ kubectl_version }}/bin/darwin/amd64"
